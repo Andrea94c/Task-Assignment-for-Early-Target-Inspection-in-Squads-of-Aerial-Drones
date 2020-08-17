@@ -27,6 +27,9 @@ The project has the following structure:
 ``` bash
 .
 ├── data
+│   ├── articles
+│   │   ├── [ICDCS]On_task_assignment_for_early_target_inspection_in_squads_of_aerial_drones.pdf
+│   │   └── [TMC]A_multi_trip_task_assignment_for_early_target_inspection_in_squads_of_aerial_drones.pdf
 │   └── test_plots
 │       ├── test1_edges_and_labels.png
 │       ├── ****.png
@@ -65,6 +68,11 @@ The ``src.util`` dir contains all the utility functions and classes:
 The ``src.erntities`` dir contains all classes that are used to wrap entities such as Tours, AoI (area of interest), Drones, Solutions, and more.
 
 The ``src.tests`` contains test_main.py which can be used to test and understand the project, further details in the following paragraphs.
+
+The ``data.test_plot`` contains all the png images produced by the ``src.test.test_main.py`` code.
+
+The ``data.articles`` contains the two referred articles TMC and ICDCS (see Sec. Description and Scope)
+
 
 The project realease is currently ongoing: new code will be updated soon; please notify us about possible bugs and/or errors.
 
