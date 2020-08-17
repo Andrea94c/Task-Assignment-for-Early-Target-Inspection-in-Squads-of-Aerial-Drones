@@ -5,23 +5,24 @@ The repository contains the release code for two conference and journal articles
 
 
 1) On Task Assignment for Early Target Inspection in Squads of Aerial Drones
-link: https://ieeexplore.ieee.org/abstract/document/8885227
-DOI: 10.1109/ICDCS.2019.00209
-Authors: Novella Bartolini ; Andrea Coletta ; Gaia Maselli
+<br /> link: https://ieeexplore.ieee.org/abstract/document/8885227 - DOI: 10.1109/ICDCS.2019.00209
+<br /> Authors: Novella Bartolini ; Andrea Coletta ; Gaia Maselli
 
 2) A Multi-Trip Task Assignment for Early Target Inspection in Squads of Aerial Drones
-link: https://ieeexplore.ieee.org/document/9093167
-DOI : 10.1109/TMC.2020.2994529
-Authors: Novella Bartolini ; Andrea Coletta ; Gaia Maselli ; Ala' Khalifeh
+<br /> link: https://ieeexplore.ieee.org/document/9093167 - DOI : 10.1109/TMC.2020.2994529
+<br /> Authors: Novella Bartolini ; Andrea Coletta ; Gaia Maselli ; Ala' Khalifeh
 
 
 Owner: Andrea Coletta
+<br /> 
 Version v1.0
+<br /> 
 Please cite these works if you use part of this code. 
 
 
 # Project Structure
 The project is implemented in python3.8 using as main libraries networkx (https://networkx.github.io/) and gurobi (https://www.gurobi.com/)
+<br /> 
 The project has the following structure:
 ``` bash
 .
@@ -48,12 +49,17 @@ The project has the following structure:
 ``` 
 Where,
 The ``src.algorithms`` dir contains all the core code about: 
+<br /> 
     - optimal.py contains TC-OPT (gurobi model), AC-OPT (gurobi model)
+<br /> 
     - approximation_algorithms.py will contain AC-GaP and AC-OpT, along as the pruning strategy
 
 The ``src.util`` dir contains all the utility functions and classes:
+<br /> 
     - config.py contains static path (where save plots) and static variable used along all the project
+<br /> 
     - trajplot.py contains the code needed to print/plot/save tours and solutions
+<br /> 
     - utility.py contains all utility functions that are used (e.g., euclidean distance among points)
 
 The ``src.erntities`` dir contains all classes that are used to wrap entities such as Tours, AoI (area of interest), Drones, Solutions, and more.
