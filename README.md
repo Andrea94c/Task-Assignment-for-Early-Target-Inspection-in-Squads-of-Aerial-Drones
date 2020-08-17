@@ -5,7 +5,7 @@ The repository contains the release code for two conference and journal articles
 
 
 1) On Task Assignment for Early Target Inspection in Squads of Aerial Drones
-<br /> link: https://ieeexplore.ieee.org/abstract/document/8885227 - DOI: 10.1109/ICDCS.2019.00209
+<br /> link: https://ieeexplore.ieee.org/document/8885227 - DOI: 10.1109/ICDCS.2019.00209
 <br /> Authors: Novella Bartolini ; Andrea Coletta ; Gaia Maselli
 
 2) A Multi-Trip Task Assignment for Early Target Inspection in Squads of Aerial Drones
