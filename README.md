@@ -38,8 +38,9 @@ The project has the following structure:
 ├── README.md
 └── src
     ├── algorithms
-    │   ├── approximation_algorithms.py
-    │   └── optimal.py
+    │   ├── approxalg.py
+    │   ├── optimal.py
+    │   └── trajbuilder.py
     ├── entities
     │   └── trajenties.py
     ├── tests
@@ -55,7 +56,9 @@ The ``src.algorithms`` dir contains all the core code about:
 <br /> 
     - optimal.py contains TC-OPT (gurobi model), AC-OPT (gurobi model)
 <br /> 
-    - approximation_algorithms.py will contain AC-GaP and AC-OpT, along as the pruning strategy
+    - approxalg.py contains AC-GaP and AC-OpT, along as the pruning strategy
+<br /> 
+    - trajbuilder.py contains Algorithm2 - Drone-trajectory generation to generate a set of feasible trajectories for each drone
 
 The ``src.util`` dir contains all the utility functions and classes:
 <br /> 
@@ -101,15 +104,29 @@ The `test_id` = 3:
 - returns them as a list
 
 The `test_id` = 4:
-- builds a random multi round solution with 2 drones
+- builds a random multi round solution using drones from test3, aoi and tours from test2
 - plots the multi round solution
 - save the plot of the multi round solution
 
 
 The `test_id` = 5:
-- builds a squad of drones, an AoI and a set of round tours (20 tours) 
+- builds an AoI, a set of round tours (20 tours) and loads drones from test3 
 - associates tours to drones 
 - runs TC-OPT and AC-OPT to optimize the assingment on 5 rounds
+- prints stats about the two solutions
+- plots the two solutions and their cumulative coverage along rounds
+- saves the plot of the two solutions
+
+
+The `test_id` = 6:
+- builds an AoI and loads drones from test3 
+- uses Algorihtm2 to generate, for each drone, a set of feasible trajectories
+- prints, plots and saves the trajectories
+
+
+The `test_id` = 7:
+- using the drones, the AoI and trajectories of test-6 find tests the two greedy algorithms.
+- runs TC-OPT and AC-OPT to achieve an assingment on 4 rounds
 - prints stats about the two solutions
 - plots the two solutions and their cumulative coverage along rounds
 - saves the plot of the two solutions

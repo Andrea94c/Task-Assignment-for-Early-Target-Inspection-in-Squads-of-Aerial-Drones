@@ -8,10 +8,12 @@ Please cite these works in case of use.
 This files is intended to have some test case and example of code execution.
 """
 
-from src.entities.trajenties import AoI, Tour, Drone, MultiRoundSolution, MultiRoundSolutionBuilder
-from src.util import config
+from src.entities.trajenties import AoI, Tour, Drone, MultiRoundSolutionBuilder
+from src.util import config, utility
 from src.util.trajplot import ToursPlotManager
 from src.algorithms.optimal import CumulativeCoverageModel, TotalCoverageModel
+from src.algorithms.approxalg import CumulativeGreedyCoverage, TotalGreedyCoverage
+from src.algorithms.trajbuilder import DroneTrajGeneration
 
 from argparse import ArgumentParser
 
@@ -40,18 +42,8 @@ def build_random_tour(aoi : AoI, depot_coords : tuple, ntargets_tour : int, seed
     list_of_targets = [targets[np.random.randint(n_target)] for ti in range(ntargets_tour)]
 
     #build tour
-    tour = []
-    for t_i in range(len(list_of_targets)):
-        if t_i == 0:  # first edge
-            tour += [(depot_coords, list_of_targets[t_i])]
-            tour += [(list_of_targets[t_i], list_of_targets[t_i+1])]
-        elif t_i == len(list_of_targets) - 1:  # last edge
-            tour += [(list_of_targets[t_i], depot_coords)]
-        else:  # all other edges
-            tour += [(list_of_targets[t_i], list_of_targets[t_i + 1])]
-
-    return Tour.from_coordinates(aoi, tour)
-
+    edges_tour = utility.build_tour_from_ordered_nodes([depot_coords] + list_of_targets)
+    return Tour.from_coordinates(aoi, edges_tour)
 
 def test1(plot=True):
     """ run the first code example (test)
@@ -184,7 +176,7 @@ def test3(plot=True):
     seed = 50
     speeds = [4, 8, 16]
     np.random.seed(seed)
-    autonomies = [np.random.randint(2000), np.random.randint(1800), np.random.randint(9000)]
+    autonomies = [np.random.randint(200, 400), np.random.randint(1000, 1800), np.random.randint(9000)]
 
     # ------------------------------------------------------------------------------------------------------
 
@@ -225,7 +217,7 @@ def test4():
 def test5():
     """
         build a set of drones, tours in an AoI.
-        Optimize the total coverage and cumulative coverage
+        Optimize the total coverage and cumulative coverage with the optimal gurobi models
         Plot the two results (multiround solution)
         return the multiround solution
     """
@@ -247,23 +239,18 @@ def test5():
     drones = drones[:2]
 
     # ------------------------------------------------------------------------------------------------------
-    # build area and targets
-    random_target_points = [(np.random.randint(0, width_area),
-                             np.random.randint(0, height_area))
-                            for i in range(n_target)]
-    random_depots_points_on_x = [(np.random.randint(0, width_area),
-                                  100)  # fixed y
-                                 for i in range(n_depots)]
-    aoi = AoI(random_depots_points_on_x, random_target_points, width_area, height_area, node_hovering_time=5)
+    # build the area of interest
+    aoi = utility.build_random_aoi(width_area, height_area, n_target, n_depots, hovering_time=5, seed=seed)
+    depots = aoi.depots
 
     # ------------------------------------------------------------------------------------------------------
     # build tours
     # random tours for first drones
-    depot_first_drone = random_depots_points_on_x[0]
+    depot_first_drone = depots[0]
     tours_first_drone = [build_random_tour(aoi, depot_first_drone, np.random.randint(len_input_tours_for_drones-5, len_input_tours_for_drones+5))
                                 for i in range(input_tours_for_drones)]  # build input_tours_for_drones input tours for the first drone
     # random tours for first drones
-    depot_second_drone = random_depots_points_on_x[1]
+    depot_second_drone = depots[1]
     tours_second_drone = [build_random_tour(aoi, depot_first_drone, np.random.randint(len_input_tours_for_drones-5, len_input_tours_for_drones+5))
                          for i in range(input_tours_for_drones)]  # build input_tours_for_drones input tours for the first drone
 
@@ -276,7 +263,7 @@ def test5():
     model.optimize()  # get multi round solution
     mrs = model.solution
     assert mrs is not None, "optimal solution not found"
-    print("TC covers", mrs.coverage_score(), "targets using", mrs.max_rounds, "rounds")
+    print("TC-OPT covers", mrs.coverage_score(), "targets using", mrs.max_rounds, "rounds")
     # plot
     mrs.plot("TC-OPT") # for big istances (over 200/300 points) remove this plot
     # plot cumulative
@@ -292,13 +279,104 @@ def test5():
     mrs = model.solution
     assert mrs is not None, "optimal solution not found"
     # plot
-    print("AC covers", mrs.coverage_score(), "targets using", mrs.max_rounds, "rounds")
+    print("AC-OPT covers", mrs.coverage_score(), "targets using", mrs.max_rounds, "rounds")
     mrs.plot("AC-OPT")  # for big istances (over 200/300 points) remove this plot
     #plot cumulative
     mrs.plot_cumulative_coverage_for_round("AC-OPT")
     # save
     mrs.save_plot(config.PATH_EXAMPLE_PLOTS + "test5_AC_mrs.png")  # for big istances (over 200/300 points) remove this plot
 
+
+def test6(plot=True):
+    """
+        build a set of drones adn targets in an AoI.
+        Use Algorithm2 : Drone-trajectory generation" (TMC : 10.1109/TMC.2020.2994529) to build a set of feasible trajectories for each drone.
+        Plot the trajectories and save them
+        return a dicitionarties {drone : trajectories} and the aoi
+    """
+
+    seed = 50
+    n_target = 50
+    n_depots = 2
+    width_area = 2000  # meters
+    height_area = 2000  # meters
+    np.random.seed(seed)
+
+    # ------------------------------------------------------------------------------------------------------
+    # build drones (just two)
+    drones = test3(plot=False)[:2]
+
+    # ------------------------------------------------------------------------------------------------------
+    # build the area of interest
+    aoi = utility.build_random_aoi(width_area, height_area, n_target, n_depots, hovering_time=5, seed=seed)
+    depots = aoi.depots
+
+    # ------------------------------------------------------------------------------------------------------
+    # for each drone compute and plot the trajectories
+    out_trajectories = {}
+    trajectories_builder = DroneTrajGeneration(aoi)
+    for drone in drones:
+        trajs = trajectories_builder.compute_trajectories(drone, depots[0])
+        out_trajectories[drone] = trajs
+
+        # plot
+        if plot:
+            # plot trajectories in text
+            depot_index =  aoi.node_index(depots[0])
+            print("Depot: ", depot_index)
+
+            # by default edges are printed, no reason to not do it.
+            for t in range(len(trajs)):
+                print("Tour", t, "-", trajs[t].edges_w_indexes)
+            plotter = ToursPlotManager(aoi, trajs)
+            plotter.show()
+            #save
+            plotter.save(config.PATH_EXAMPLE_PLOTS + "test6_tours_" + str(drone) + ".png")
+
+    return out_trajectories, aoi
+
+
+def test7():
+    """
+        build a set of drones, tours in an AoI.
+        Optimize the total coverage and cumulative coverage with the Greedy Algorithm
+        Plot the two results (multiround solution)
+        return the multiround solution
+    """
+
+    seed = 50
+    max_rounds = 4
+    np.random.seed(seed)
+
+    # ------------------------------------------------------------------------------------------------------
+    # build the area of interest, drone and tours
+    uavs_to_tours, aoi = test6(plot=False)
+
+    # ------------------------------------------------------------------------------------------------------
+    # optimize Total Coverage
+    alg = TotalGreedyCoverage(aoi, uavs_to_tours, max_rounds, debug=False)
+    mrs = alg.solution()  # get multi round solution
+    assert mrs is not None, "solution not found"
+    print("TC-GaP covers", mrs.coverage_score(), "targets using", mrs.max_rounds, "rounds")
+    # plot
+    mrs.plot("TC-GaP") # for big istances (over 200/300 points) remove this plot
+    # plot cumulative
+    mrs.plot_cumulative_coverage_for_round("TC-GaP")
+    # save
+    mrs.save_plot(config.PATH_EXAMPLE_PLOTS + "test7_TC_mrs.png") # for big istances (over 200/300 points) remove this plot
+
+    # ------------------------------------------------------------------------------------------------------
+    # optimize Cumulative Coverage
+    alg = CumulativeGreedyCoverage(aoi, uavs_to_tours, max_rounds, debug=False)
+    mrs = alg.solution()  # get multi round solution
+    assert mrs is not None, "optimal solution not found"
+    # plot
+    print("AC-GaP covers", mrs.coverage_score(), "targets using", mrs.max_rounds, "rounds")
+    mrs.plot("AC-GaP")  # for big istances (over 200/300 points) remove this plot
+    #plot cumulative
+    mrs.plot_cumulative_coverage_for_round("AC-GaP")
+    # save
+    mrs.save_plot(config.PATH_EXAMPLE_PLOTS + "test7_AC_mrs.png")  # for big istances (over 200/300 points) remove this plot
 
 
 if __name__ == "__main__":
@@ -322,3 +400,7 @@ if __name__ == "__main__":
         test4()
     elif test_id == 5:
         test5()
+    elif test_id == 6:
+        test6()
+    elif test_id == 7:
+        test7()

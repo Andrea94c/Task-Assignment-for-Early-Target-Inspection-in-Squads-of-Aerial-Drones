@@ -10,15 +10,14 @@ See above papers per specs of the two models.
 
 They take input AoI, tours and max number of rounds. Return a multi round solution.
 """
+from src.entities.trajenties import AoI, Tour, MultiRoundSolutionBuilder
 
 from gurobipy import *
 from abc import ABCMeta, abstractmethod
-from src.entities.trajenties import AoI, Drone, Tour, MultiRoundSolutionBuilder
-
 from deprecated import deprecated
+
 import networkx as nx
 import gurobipy
-
 
 # """ Constructor for the Path Coverage, input the graph that
 #    must be covered, the list of uavs that will be used, for each

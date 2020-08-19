@@ -27,12 +27,22 @@ Notice that any area with no-fly zone can be still considered: the output soluti
 """
 
 import networkx as nx
+import math
 
 from matplotlib import pyplot as plt
 
-from src.util import utility
 from src.util.trajplot import AoIPlotManager, ToursPlotManager
 
+
+def euclidean_distance(point1, point2):
+    """
+
+    :param point1: the first 2D point/node
+    :param point2: the second 2D point/node
+    :return: float -> the euclidean distance between two points
+    """
+    return math.sqrt(math.pow(point2[0] - point1[0], 2)
+                     + math.pow(point2[1] - point1[1], 2))
 
 # -----------------------------------------------------------#
 #
@@ -108,13 +118,13 @@ class AoI():
         if self.viable_paths is None:
             for i in range(0, len(all_nodes)):
                 for j in range(i + 1, len(all_nodes)):
-                    w_ij = utility.euclidean_distance(all_nodes[j], all_nodes[i])
+                    w_ij = euclidean_distance(all_nodes[j], all_nodes[i])
                     G.add_edge(i, j, weight=w_ij)
         else:
             for viable_edge in self.viable_paths:
                 coord_i, coord_j = viable_edge
                 i, j = all_nodes.index(coord_i), all_nodes.index(coord_j)
-                w_ij = utility.euclidean_distance(coord_i, coord_j)
+                w_ij = euclidean_distance(coord_i, coord_j)
                 G.add_edge(i, j, weight=w_ij)
 
         # the graph, by construction, should respect the triangle inequality
@@ -173,8 +183,8 @@ class Tour:
         self.edges_w_coords = edges_w_coords
 
         # set depots and edges with indexex of graph structure
-        self.targets_indexes = []
-        self.targets_coords = []
+        self.targets_indexes = []  # must be ordered
+        self.targets_coords = []  # must be ordered
 
         self.edges_w_indexes = []
         for ec in self.edges_w_coords:
@@ -220,7 +230,7 @@ class Tour:
         if self.hovering_time_tour_seconds is None:
             hlen = 0
             for edge in self.edges_w_indexes:
-                hlen += self.aoi.graph.edges[edge[0], edge[1]]['weight']
+                hlen += self.aoi.graph.nodes[edge[1]]['weight']
             self.hovering_time_tour_seconds = hlen
 
         return self.hovering_time_tour_seconds
@@ -410,6 +420,8 @@ class MultiRoundSolution:
         for round in range(self.max_rounds):
             self.targets_covered_on_each_round[round] = set()
             for drone in self.drone_and_tours.keys():
+                if round >= len(self.drone_and_tours[drone]):  # the drone does not use all the rounds
+                    continue
                 for t in self.drone_and_tours[drone][round].targets_coords:
                     if t not in already_visited:
                         self.targets_covered_on_each_round[round].add(t)
